@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fraction Explorer</title>
+<style>
+:root {
+  --coral: #ff7055;
+  --green: #3cbb7a;
+  --blue: #3a8fd6;
+  --sun: #ffd84d;
+  --navy: #1a2a4a;
+  --bg: #eef6ff;
+  --card: #ffffff;
+  --radius: 18px;
+  --shadow: 0 3px 16px rgba(20,50,100,0.10);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--navy);
+  overscroll-behavior: none;
+}
+header {
+  background: var(--navy);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+header h1 {
+  font-size: clamp(1.3rem, 5vw, 1.9rem);
+  font-weight: 900;
+  color: var(--sun);
+  letter-spacing: 0.5px;
+}
+.main {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 18px 12px 48px;
+}
+.tagline {
+  text-align: center;
+  font-size: clamp(0.9rem, 3.5vw, 1.05rem);
+  color: #4a6888;
+  margin-bottom: 18px;
+  font-weight: 600;
+}
+.ctrl-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ctrl-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+.ctrl-card.full { grid-column: 1 / -1; }
+.ctrl-card label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #8099b4;
+  display: block;
+  margin-bottom: 8px;
+}
+.ctrl-card select {
+  width: 100%;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 700;
+  border: 2px solid #d0e2f2;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #f4f9ff;
+  color: var(--navy);
+  cursor: pointer;
+  outline: none;
+}
+.color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.swatch {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+.swatch.active {
+  border-color: var(--navy);
+  transform: scale(1.2);
+}
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.range-row input[type=range] {
+  flex: 1;
+  height: 6px;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+.range-val {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--blue);
+  min-width: 32px;
+  text-align: center;
+}
+.canvas-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px 12px 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.canvas-card h2 {
+  font-size: clamp(0.88rem, 3.5vw, 1rem);
+  font-weight: 800;
+  color: #4a6888;
+  margin-bottom: 12px;
+  align-self: flex-start;
+}
+#shapeCanvas {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 12px;
+}
+.counter-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 14px;
+}
+.cnt-btn {
+  font-size: 1.7rem;
+  font-weight: 900;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  touch-action: manipulation;
+  user-select: none;
+  transition: transform 0.12s;
+  -webkit-appearance: none;
+  line-height: 1;
+}
+.cnt-btn:active { transform: scale(0.88); }
+.cnt-btn.minus { background: var(--coral); }
+.cnt-btn.plus  { background: var(--green); }
+.cnt-btn:disabled { opacity: 0.28; }
+.frac-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 64px;
+}
+.frac-num {
+  font-size: clamp(2rem, 9vw, 2.8rem);
+  font-weight: 900;
+  color: var(--coral);
+  line-height: 1.05;
+}
+.frac-bar-line {
+  width: 100%;
+  height: 4px;
+  background: var(--navy);
+  border-radius: 2px;
+  margin: 2px 0;
+}
+.frac-den {
+  font-size: clamp(2rem, 9vw, 2.8rem);
+  font-weight: 900;
+  color: var(--blue);
+  line-height: 1.05;
+}
+.hint-box {
+  background: #fff9de;
+  border: 2px solid var(--sun);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: clamp(0.82rem, 3.2vw, 0.92rem);
+  font-weight: 700;
+  color: #7a5e00;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  width: 100%;
+}
+.hint-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.equiv-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px 12px;
+  box-shadow: var(--shadow);
+}
+.equiv-card h2 {
+  font-size: clamp(0.95rem, 3.8vw, 1.1rem);
+  font-weight: 900;
+  margin-bottom: 4px;
+}
+.equiv-card p {
+  font-size: 0.8rem;
+  color: #7a90a8;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.equiv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+  gap: 10px;
+}
+.equiv-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.equiv-frac {
+  font-size: 1rem;
+  font-weight: 900;
+  color: var(--blue);
+}
+.equiv-bar {
+  width: 100%;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #c8dff0;
+  overflow: hidden;
+  display: flex;
+}
+.equiv-seg {
+  height: 100%;
+  border-right: 1.5px solid rgba(255,255,255,0.55);
+  flex: 1;
+}
+.equiv-seg:last-child { border-right: none; }
+.match-pill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--green);
+  border-radius: 20px;
+  padding: 2px 7px;
+  display: none;
+}
+.match-pill.show { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.5rem">⭐</span>
+  <h1>Fraction Explorer</h1>
+  <span style="font-size:1.5rem">🍕</span>
+</header>
+
+<div class="main">
+  <p class="tagline">Pick a shape, color it, learn fractions!</p>
+
+  <div class="ctrl-row">
+    <div class="ctrl-card">
+      <label>Shape</label>
+      <select id="shapeSelect">
+        <option value="circle">Circle</option>
+        <option value="square">Square</option>
+        <option value="rectangle">Rectangle</option>
+        <option value="hexagon">Hexagon</option>
+      </select>
+    </div>
+    <div class="ctrl-card">
+      <label>Parts: <span id="denomLabel">4</span></label>
+      <div class="range-row">
+        <input type="range" id="denomSlider" min="2" max="12" value="4" step="1">
+        <span class="range-val" id="denomVal">4</span>
+      </div>
+    </div>
+    <div class="ctrl-card full">
+      <label>Color</label>
+      <div class="color-swatches" id="colorSwatches"></div>
+    </div>
+  </div>
+
+  <div class="canvas-card">
+    <h2>Tap slices or use the + / − buttons!</h2>
+    <canvas id="shapeCanvas" width="320" height="260"></canvas>
+    <div class="counter-row">
+      <button class="cnt-btn minus" id="minusBtn">−</button>
+      <div class="frac-display">
+        <span class="frac-num" id="numDisplay">0</span>
+        <div class="frac-bar-line"></div>
+        <span class="frac-den" id="denDisplay">4</span>
+      </div>
+      <button class="cnt-btn plus" id="plusBtn">+</button>
+    </div>
+    <div class="hint-box">
+      <span class="hint-icon">💡</span>
+      <span id="hintText">Tap + or touch a slice to color it!</span>
+    </div>
+  </div>
+
+  <div class="equiv-card">
+    <h2>🔄 Equivalent Fractions</h2>
+    <p>These all show the same amount shaded!</p>
+    <div class="equiv-grid" id="equivGrid"></div>
+  </div>
+</div>
+
+<script>
+const COLORS = [
+  { fill: '#4da8f0', stroke: '#1a68b0' },
+  { fill: '#ff7055', stroke: '#c03010' },
+  { fill: '#3cbb7a', stroke: '#147a48' },
+  { fill: '#b07ef5', stroke: '#6030b8' },
+  { fill: '#ffb030', stroke: '#a06000' },
+  { fill: '#f070b8', stroke: '#a02070' },
+  { fill: '#ffd84d', stroke: '#a07800' },
+  { fill: '#30c8c8', stroke: '#087878' },
+];
+
+let state = { shape: 'circle', colorIdx: 0, denom: 4, filled: 0 };
+
+const canvas = document.getElementById('shapeCanvas');
+const ctx = canvas.getContext('2d');
+let DPR = 1;
+
+function setupCanvas() {
+  DPR = window.devicePixelRatio || 1;
+  const displayW = canvas.offsetWidth || 320;
+  const displayH = Math.round(displayW * (260 / 320));
+  canvas.width = Math.round(displayW * DPR);
+  canvas.height = Math.round(displayH * DPR);
+  canvas.style.height = displayH + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+function logW() { return canvas.width / DPR; }
+function logH() { return canvas.height / DPR; }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+function buildSwatches() {
+  const wrap = document.getElementById('colorSwatches');
+  wrap.innerHTML = '';
+  COLORS.forEach((c, i) => {
+    const s = document.createElement('div');
+    s.className = 'swatch' + (i === state.colorIdx ? ' active' : '');
+    s.style.background = c.fill;
+    s.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      state.colorIdx = i;
+      buildSwatches();
+      draw();
+      renderEquiv();
+    });
+    wrap.appendChild(s);
+  });
+}
+
+function makePath(shape, i, total) {
+  const W = logW(), H = logH();
+  const cx = W / 2, cy = H / 2;
+  ctx.beginPath();
+  if (shape === 'circle') {
+    const r = Math.min(cx, cy) - 12;
+    if (total === 1) {
+      ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+    } else {
+      const a0 = (2 * Math.PI / total) * i - Math.PI / 2;
+      const a1 = (2 * Math.PI / total) * (i + 1) - Math.PI / 2;
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, a0, a1);
+    }
+  } else if (shape === 'square') {
+    const s = Math.min(W, H) - 28;
+    const x0 = cx - s / 2, y0 = cy - s / 2;
+    const sw = s / total;
+    ctx.rect(x0 + i * sw, y0, sw, s);
+  } else if (shape === 'rectangle') {
+    const rW = W - 24, rH = H * 0.52;
+    const x0 = cx - rW / 2, y0 = cy - rH / 2;
+    const sw = rW / total;
+    ctx.rect(x0 + i * sw, y0, sw, rH);
+  } else if (shape === 'hexagon') {
+    const r = Math.min(W, H) / 2 - 16;
+    const pts = Array.from({ length: 6 }, (_, k) => {
+      const a = (Math.PI / 3) * k - Math.PI / 2;
+      return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+    });
+    const a0 = (2 * Math.PI / total) * i - Math.PI / 2;
+    const a1 = (2 * Math.PI / total) * (i + 1) - Math.PI / 2;
+    function hexPt(angle) {
+      const co = Math.cos(angle), si = Math.sin(angle);
+      let best = r;
+      for (let k = 0; k < 6; k++) {
+        const p1 = pts[k], p2 = pts[(k + 1) % 6];
+        const dx = p2.x - p1.x, dy = p2.y - p1.y;
+        const denom = co * dy - si * dx;
+        if (Math.abs(denom) < 1e-9) continue;
+        const t = ((p1.x - cx) * dy - (p1.y - cy) * dx) / denom;
+        const u = ((p1.x - cx) * si - (p1.y - cy) * co) / denom;
+        if (t > 0 && u >= 0 && u <= 1) best = Math.min(best, t);
+      }
+      return { x: cx + best * co, y: cy + best * si };
+    }
+    ctx.moveTo(cx, cy);
+    for (let s = 0; s <= 16; s++) {
+      const a = a0 + (a1 - a0) * (s / 16);
+      const p = hexPt(a);
+      ctx.lineTo(p.x, p.y);
+    }
+  }
+  ctx.closePath();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, logW(), logH());
+  const col = COLORS[state.colorIdx];
+  for (let i = 0; i < state.denom; i++) {
+    makePath(state.shape, i, state.denom);
+    ctx.fillStyle = i < state.filled ? col.fill : '#e4eef8';
+    ctx.fill();
+    ctx.strokeStyle = col.stroke;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  updateUI();
+}
+
+function updateUI() {
+  const f = state.filled, d = state.denom;
+  document.getElementById('numDisplay').textContent = f;
+  document.getElementById('denDisplay').textContent = d;
+  document.getElementById('minusBtn').disabled = f <= 0;
+  document.getElementById('plusBtn').disabled = f >= d;
+
+  let hint = '';
+  if (f === 0) hint = 'Tap + or touch a slice to color it!';
+  else if (f === d) hint = "You colored the whole thing — that's 1 whole! 🎊";
+  else {
+    const g = gcd(f, d);
+    if (g > 1) hint = `${f}/${d} is the same as ${f/g}/${d/g} — they're equal! ✨`;
+    else {
+      const names = ['','whole','half','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth','eleventh','twelfth'];
+      const name = d <= 12 ? names[d] + (f > 1 ? 's' : '') : `${d}th${f > 1 ? 's' : ''}`;
+      hint = `You have ${f} ${name} colored! Great work! 🌟`;
+    }
+  }
+  document.getElementById('hintText').textContent = hint;
+  renderEquiv();
+}
+
+function renderEquiv() {
+  const col = COLORS[state.colorIdx];
+  const f = state.filled, d = state.denom;
+  const results = [];
+  if (f === 0) {
+    for (let dd = 2; dd <= 12; dd++) results.push([0, dd]);
+  } else {
+    for (let dd = 2; dd <= 12; dd++) {
+      const n = (f / d) * dd;
+      if (Math.abs(Math.round(n) - n) < 1e-9 && n >= 0 && n <= dd) results.push([Math.round(n), dd]);
+    }
+  }
+  const grid = document.getElementById('equivGrid');
+  grid.innerHTML = '';
+  results.slice(0, 8).forEach(([n, dd]) => {
+    const item = document.createElement('div');
+    item.className = 'equiv-item';
+    const lbl = document.createElement('div');
+    lbl.className = 'equiv-frac';
+    lbl.textContent = `${n}/${dd}`;
+    const bar = document.createElement('div');
+    bar.className = 'equiv-bar';
+    for (let i = 0; i < dd; i++) {
+      const seg = document.createElement('div');
+      seg.className = 'equiv-seg';
+      seg.style.background = col.fill;
+      seg.style.opacity = i < n ? '1' : '0.15';
+      bar.appendChild(seg);
+    }
+    const pill = document.createElement('div');
+    pill.className = 'match-pill' + (dd === d ? ' show' : '');
+    pill.textContent = 'yours!';
+    item.appendChild(lbl);
+    item.appendChild(bar);
+    item.appendChild(pill);
+    grid.appendChild(item);
+  });
+}
+
+function hitTest(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = logW() / rect.width;
+  const scaleY = logH() / rect.height;
+  const mx = (clientX - rect.left) * scaleX;
+  const my = (clientY - rect.top) * scaleY;
+  for (let i = 0; i < state.denom; i++) {
+    makePath(state.shape, i, state.denom);
+    if (ctx.isPointInPath(mx, my)) {
+      state.filled = i < state.filled ? i : i + 1;
+      draw();
+      return;
+    }
+  }
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  hitTest(e.clientX, e.clientY);
+});
+
+document.getElementById('plusBtn').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (state.filled < state.denom) { state.filled++; draw(); }
+});
+document.getElementById('minusBtn').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (state.filled > 0) { state.filled--; draw(); }
+});
+document.getElementById('denomSlider').addEventListener('input', (e) => {
+  state.denom = parseInt(e.target.value);
+  state.filled = clamp(state.filled, 0, state.denom);
+  document.getElementById('denomVal').textContent = state.denom;
+  document.getElementById('denomLabel').textContent = state.denom;
+  draw();
+});
+document.getElementById('shapeSelect').addEventListener('change', (e) => {
+  state.shape = e.target.value;
+  draw();
+});
+
+window.addEventListener('resize', () => { setupCanvas(); draw(); });
+
+setupCanvas();
+buildSwatches();
+draw();
+</script>
+</body>
+</html>
